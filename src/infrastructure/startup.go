@@ -18,7 +18,7 @@ func Startup() {
 	layout := baseLayout()
 	db := connectToMongo("mongodb://localhost:27017")
 	ticketsController.DAL = tickets.NewTicketsCollection(db)
-	ticketsController.RegisterTemplate(layout)
+	ticketsController.RegisterTemplates(layout)
 	ticketsController.RegisterRoutes()
 }
 

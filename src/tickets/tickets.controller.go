@@ -3,6 +3,7 @@ package tickets
 import (
 	"encoding/json"
 	"html/template"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -37,7 +38,7 @@ func (t *TicketsController) RegisterTemplate(layout *template.Template) {
 	t.ticketsTemplate = tmpl
 }
 
-func (t *TicketsController) showTickets(w http.ResponseWriter, r *http.Request){
+func (t *TicketsController) showTickets(w http.ResponseWriter, r *http.Request) {
 	tickets := t.DAL.GetTickets()
 	w.Header().Set("Content-Type", "text/html")
 	t.ticketsTemplate.Execute(w, tickets)
@@ -54,7 +55,30 @@ func (t *TicketsController) handleTickets(w http.ResponseWriter, r *http.Request
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(ticketsJSON)
+	case http.MethodPost:
+		var dto CreateTicketDto
+		err := json.NewDecoder(r.Body).Decode(&dto)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(err.Error()))
+			log.Printf("Could not parse request: %v", err)
+			return
+		}
+		id, err := t.DAL.CreateTicket(dto)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			log.Printf("Could not parse request: %v", err)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+		encodeAsJSON(id, w)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
+}
+
+func encodeAsJSON(data interface{}, w io.Writer) {
+	enc := json.NewEncoder(w)
+	enc.Encode(data)
 }

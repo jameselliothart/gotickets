@@ -11,13 +11,15 @@ import (
 )
 
 type TicketsController struct {
-	ticketsTemplate *template.Template
-	DAL             DataHandler
+	ticketsTemplate   *template.Template
+	newTicketTemplate *template.Template
+	DAL               DataHandler
 }
 
 func (t *TicketsController) RegisterRoutes() {
 	http.HandleFunc("/api/tickets", t.handleTickets)
 	http.HandleFunc("/tickets", t.showTickets)
+	http.HandleFunc("/tickets/new", t.newTicket)
 }
 
 func (t *TicketsController) RegisterTemplates(layout *template.Template) {
@@ -42,6 +44,11 @@ func (t *TicketsController) registerTemplate(layout *template.Template, fileName
 		log.Fatalf("Failed to parse contents of '%v' as template: %v", f.Name(), err)
 	}
 	return tmpl
+}
+
+func (t *TicketsController) newTicket(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	t.newTicketTemplate.Execute(w, CreateTicketDto{})
 }
 
 func (t *TicketsController) showTickets(w http.ResponseWriter, r *http.Request) {

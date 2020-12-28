@@ -20,8 +20,14 @@ func (t *TicketsController) RegisterRoutes() {
 	http.HandleFunc("/tickets", t.showTickets)
 }
 
-func (t *TicketsController) RegisterTemplate(layout *template.Template) {
-	f, err := os.Open("tickets/tickets.html")
+func (t *TicketsController) RegisterTemplates(layout *template.Template) {
+	const basePath = "tickets/templates/"
+	t.ticketsTemplate = t.registerTemplate(layout, basePath+"tickets.html")
+	t.newTicketTemplate = t.registerTemplate(layout, basePath+"new_ticket.html")
+}
+
+func (t *TicketsController) registerTemplate(layout *template.Template, fileName string) *template.Template {
+	f, err := os.Open(fileName)
 	defer f.Close()
 	if err != nil {
 		log.Fatalf("Failed to open template: %v", err)
@@ -35,7 +41,7 @@ func (t *TicketsController) RegisterTemplate(layout *template.Template) {
 	if err != nil {
 		log.Fatalf("Failed to parse contents of '%v' as template: %v", f.Name(), err)
 	}
-	t.ticketsTemplate = tmpl
+	return tmpl
 }
 
 func (t *TicketsController) showTickets(w http.ResponseWriter, r *http.Request) {

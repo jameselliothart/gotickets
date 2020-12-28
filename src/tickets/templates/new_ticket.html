@@ -1,8 +1,8 @@
 {{define "content"}}
-<form class="row g-3">
+<form class="row g-3" action="/tickets/new" method="POST">
     <div class="col-md-6">
         <label for="summary" class="form-label">Summary</label>
-        <input type="text" class="form-control" id="summary" required>
+        <input id="summary" name="summary" type="text" class="form-control" value="{{.Summary}}" required>
     </div>
     <div class="col-12">
         <button class="btn btn-primary" type="submit">Create</button>

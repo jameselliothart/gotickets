@@ -47,8 +47,28 @@ func (t *TicketsController) registerTemplate(layout *template.Template, fileName
 }
 
 func (t *TicketsController) newTicket(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	t.newTicketTemplate.Execute(w, CreateTicketDto{})
+	switch r.Method {
+	case http.MethodGet:
+		w.Header().Set("Content-Type", "text/html")
+		t.newTicketTemplate.Execute(w, CreateTicketDto{})
+	case http.MethodPost:
+		err := r.ParseForm()
+		if err != nil {
+			log.Printf("Parsing form: %v", err)
+		}
+		ticketToCreate := CreateTicketDto{
+			Summary: r.Form.Get("summary"),
+		}
+		ticketID, err := t.DAL.CreateTicket(ticketToCreate)
+		if err != nil {
+			log.Printf("Failed to create ticket: %v", err)
+			return
+		}
+		log.Printf("Created ticket '%v'", ticketID)
+		http.Redirect(w, r, "/tickets", http.StatusFound)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
 }
 
 func (t *TicketsController) showTickets(w http.ResponseWriter, r *http.Request) {

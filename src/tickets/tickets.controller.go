@@ -48,13 +48,8 @@ func (t *TicketsController) handleTickets(w http.ResponseWriter, r *http.Request
 	switch r.Method {
 	case http.MethodGet:
 		tickets := t.DAL.GetTickets()
-		ticketsJSON, err := json.Marshal(tickets)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(ticketsJSON)
+		encodeAsJSON(tickets, w)
 	case http.MethodPost:
 		var dto CreateTicketDto
 		err := json.NewDecoder(r.Body).Decode(&dto)
@@ -68,7 +63,7 @@ func (t *TicketsController) handleTickets(w http.ResponseWriter, r *http.Request
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
-			log.Printf("Could not parse request: %v", err)
+			log.Printf("Could not create ticket: %v", err)
 			return
 		}
 		w.WriteHeader(http.StatusCreated)

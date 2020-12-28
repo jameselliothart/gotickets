@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"context"
+	"html/template"
 	"log"
 	"time"
 
@@ -14,9 +15,10 @@ import (
 var ticketsController tickets.TicketsController
 
 func Startup() {
-	// ticketsController.TicketsTemplate = templates["tickets.html"]
+	layout := baseLayout()
 	db := connectToMongo("mongodb://localhost:27017")
 	ticketsController.DAL = tickets.NewTicketsCollection(db)
+	ticketsController.RegisterTemplate(layout)
 	ticketsController.RegisterRoutes()
 }
 
@@ -35,4 +37,11 @@ func connectToMongo(conn string) *mongo.Database {
 	log.Println("Connected to mongo")
 	db := client.Database("gotickets")
 	return db
+}
+
+func baseLayout() *template.Template {
+	const basePath = "templates"
+	layout := template.Must(template.ParseFiles(basePath + "/_layout.html"))
+	template.Must(layout.ParseFiles(basePath+"/_header.html", basePath+"/_footer.html"))
+	return layout
 }

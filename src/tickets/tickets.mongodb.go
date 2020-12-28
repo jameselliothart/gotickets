@@ -1,7 +1,10 @@
 package tickets
 
 import (
-	"github.com/google/uuid"
+	"context"
+	"log"
+
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -14,15 +17,14 @@ func NewTicketsCollection(db *mongo.Database) *TicketsCollection {
 	return &TicketsCollection{ticketsCollection}
 }
 
-func (mc *TicketsCollection) GetTickets() []Ticket {
-	return []Ticket{
-		{
-			ID:      uuid.New().String(),
-			Summary: "ticket 1",
-		},
-		{
-			ID:      uuid.New().String(),
-			Summary: "ticket 2",
-		},
+func (c *TicketsCollection) GetTickets() []Ticket {
+	tickets := []Ticket{}
+	cursor, err := c.Find(context.TODO(), bson.M{})
+	if err == nil {
+		cursor.All(context.TODO(), tickets)
+		log.Printf("Retrieved %v documents", len(tickets))
+	} else {
+		log.Printf("Error getting all tickets: %v\n", err)
 	}
+	return tickets
 }

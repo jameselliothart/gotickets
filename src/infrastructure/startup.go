@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/jameselliothart/gotickets/cqrs"
 	"github.com/jameselliothart/gotickets/tickets"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -16,10 +17,16 @@ var ticketsController tickets.TicketsController
 
 func Startup() {
 	layout := baseLayout()
-	db := connectToMongo("mongodb://localhost:27017")
-	ticketsController.DAL = tickets.NewTicketsCollection(db)
 	ticketsController.RegisterTemplates(layout)
 	ticketsController.RegisterRoutes()
+
+	ticketsCollection := tickets.NewTicketsCollection(connectToMongo("mongodb://localhost:27017"))
+	ticketsController.DAL = ticketsCollection
+	ticketsController.CommandHandler = &tickets.TicketCommandHandler{
+		Handlers: []cqrs.EventHandler{
+			ticketsCollection,
+		},
+	}
 }
 
 func connectToMongo(conn string) *mongo.Database {

@@ -11,7 +11,7 @@ type Command interface {
 }
 
 type CommandHandler interface {
-	HandleCmd(Command)
+	HandleCommand(Command)
 }
 
 type Event interface {

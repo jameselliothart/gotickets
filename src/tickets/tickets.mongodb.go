@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 
+	"github.com/jameselliothart/gotickets/cqrs"
+	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -29,12 +31,21 @@ func (c *TicketsCollection) GetTickets() []Ticket {
 	return tickets
 }
 
-func (c *TicketsCollection) CreateTicket(dto CreateTicketDto) (TicketID, error) {
-	ticket := NewTicket(dto.Summary)
+func (c *TicketsCollection) create(ticket Ticket) error {
 	result, err := c.InsertOne(context.TODO(), ticket)
 	if err != nil {
-		return TicketID{}, err
+		return err
 	}
-	log.Printf("Created ticket with mongo id: '%v', ticket id: '%v'", result.InsertedID, ticket.TicketID)
-	return ticket.TicketID, err
+	log.Printf("Created ticket with: MongoID '%v' | TicketID '%v'", result.InsertedID, ticket.TicketID)
+	return nil
+}
+
+func (c *TicketsCollection) HandleEvent(event cqrs.Event) error {
+	switch e := event.(type) {
+	case TicketCreatedEvent:
+		ticket := NewTicket(e.Summary)
+		return c.create(ticket)
+	default:
+		return errors.Errorf("%T does not recognize event: %#v", c, e)
+	}
 }

@@ -8,16 +8,18 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/jameselliothart/gotickets/cqrs"
 )
 
 type TicketsController struct {
 	ticketsTemplate   *template.Template
 	newTicketTemplate *template.Template
 	DAL               DataHandler
+	CommandHandler    cqrs.CommandHandler
 }
 
 func (t *TicketsController) RegisterRoutes() {
-	http.HandleFunc("/api/tickets", t.handleTickets)
 	http.HandleFunc("/tickets", t.showTickets)
 	http.HandleFunc("/tickets/new", t.newTicket)
 }
@@ -54,17 +56,11 @@ func (t *TicketsController) newTicket(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		err := r.ParseForm()
 		if err != nil {
-			log.Printf("Parsing form: %v", err)
-		}
-		ticketToCreate := CreateTicketDto{
-			Summary: r.Form.Get("summary"),
-		}
-		ticketID, err := t.DAL.CreateTicket(ticketToCreate)
-		if err != nil {
-			log.Printf("Failed to create ticket: %v", err)
+			log.Printf("Cannot parse form: %v", err)
 			return
 		}
-		log.Printf("Created ticket '%v'", ticketID)
+		ticketToCreate := NewCreateTicketCmd(r.Form.Get("summary"))
+		t.CommandHandler.HandleCommand(ticketToCreate)
 		http.Redirect(w, r, "/tickets", http.StatusFound)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -75,35 +71,6 @@ func (t *TicketsController) showTickets(w http.ResponseWriter, r *http.Request) 
 	tickets := t.DAL.GetTickets()
 	w.Header().Set("Content-Type", "text/html")
 	t.ticketsTemplate.Execute(w, tickets)
-}
-
-func (t *TicketsController) handleTickets(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		tickets := t.DAL.GetTickets()
-		w.Header().Set("Content-Type", "application/json")
-		encodeAsJSON(tickets, w)
-	case http.MethodPost:
-		var dto CreateTicketDto
-		err := json.NewDecoder(r.Body).Decode(&dto)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
-			log.Printf("Could not parse request: %v", err)
-			return
-		}
-		id, err := t.DAL.CreateTicket(dto)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			log.Printf("Could not create ticket: %v", err)
-			return
-		}
-		w.WriteHeader(http.StatusCreated)
-		encodeAsJSON(id, w)
-	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
-	}
 }
 
 func encodeAsJSON(data interface{}, w io.Writer) {

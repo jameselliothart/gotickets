@@ -2,6 +2,7 @@ package tickets
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/jameselliothart/gotickets/cqrs"
@@ -31,20 +32,24 @@ func (c *TicketsCollection) GetTickets() []Ticket {
 	return tickets
 }
 
-func (c *TicketsCollection) create(ticket Ticket) error {
-	result, err := c.InsertOne(context.TODO(), ticket)
+func (c *TicketsCollection) create(ticket Ticket) (TicketID, error) {
+	_, err := c.InsertOne(context.TODO(), ticket)
 	if err != nil {
-		return err
+		return TicketID{}, err
 	}
-	log.Printf("Created ticket with: MongoID '%v' | TicketID '%v'", result.InsertedID, ticket.TicketID)
-	return nil
+	// log.Printf("Created ticket with: MongoID '%v' | TicketID '%v'", result.InsertedID, ticket.TicketID)
+	return TicketID{ID: ticket.ID}, nil
 }
 
 func (c *TicketsCollection) HandleEvent(event cqrs.Event) error {
 	switch e := event.(type) {
 	case TicketCreatedEvent:
 		ticket := NewTicket(e.Summary)
-		return c.create(ticket)
+		id, err := c.create(ticket)
+		if err == nil {
+			cqrs.LogWithCorrelation(event, fmt.Sprintf("Created ticket id: '%v'", id))
+		}
+		return err
 	default:
 		return errors.Errorf("%T does not recognize event: %#v", c, e)
 	}

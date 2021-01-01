@@ -60,6 +60,7 @@ func (t *TicketsController) newTicket(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		ticketToCreate := NewCreateTicketCmd(r.Form.Get("summary"))
+		cqrs.LogWithCorrelation(ticketToCreate, "Create Ticket Command created:", ticketToCreate)
 		t.CommandHandler.HandleCommand(ticketToCreate)
 		http.Redirect(w, r, "/tickets", http.StatusFound)
 	default:

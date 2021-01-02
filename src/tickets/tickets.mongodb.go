@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/jameselliothart/gotickets/cqrs"
 	"github.com/pkg/errors"
@@ -37,11 +38,11 @@ func (c *TicketsCollection) create(ticket Ticket) (TicketID, error) {
 	if err != nil {
 		return TicketID{}, err
 	}
-	// log.Printf("Created ticket with: MongoID '%v' | TicketID '%v'", result.InsertedID, ticket.TicketID)
 	return TicketID{ID: ticket.ID}, nil
 }
 
-func (c *TicketsCollection) HandleEvent(event cqrs.Event) error {
+func (c *TicketsCollection) HandleEvent(event cqrs.Event, wg *sync.WaitGroup, ch chan<- error) {
+	var err error
 	switch e := event.(type) {
 	case TicketCreatedEvent:
 		ticket := NewTicket(e.Summary)
@@ -49,10 +50,11 @@ func (c *TicketsCollection) HandleEvent(event cqrs.Event) error {
 		if err == nil {
 			cqrs.LogWithCorrelation(event, fmt.Sprintf("Created ticket id: '%v'", id))
 		}
-		return err
 	default:
-		return errors.Errorf("%T does not recognize event: %#v", c, e)
+		err = errors.Errorf("%T does not recognize event: %#v", c, e)
 	}
+	ch <- err
+	wg.Done()
 }
 
 func (c *TicketsCollection) HandleQuery(query interface{}) (tickets []Ticket) {

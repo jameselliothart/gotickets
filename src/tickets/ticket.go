@@ -79,6 +79,12 @@ func (e TicketCreatedEvent) CreatedAt() time.Time {
 	return e.createdAt
 }
 
+type TicketQueryHandler interface {
+	HandleQuery(interface{}) []Ticket
+}
+
+type ActiveTicketsQuery struct {}
+
 type DataHandler interface {
 	GetTickets() []Ticket
 }

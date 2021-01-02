@@ -21,7 +21,7 @@ func Startup() {
 	ticketsController.RegisterRoutes()
 
 	ticketsCollection := tickets.NewTicketsCollection(connectToMongo("mongodb://localhost:27017"))
-	ticketsController.DAL = ticketsCollection
+	ticketsController.QueryHandler = ticketsCollection
 	ticketsController.CommandHandler = &tickets.TicketCommandHandler{
 		Handlers: []cqrs.EventHandler{
 			ticketsCollection,

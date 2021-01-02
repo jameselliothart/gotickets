@@ -20,7 +20,7 @@ func NewTicketsCollection(db *mongo.Database) *TicketsCollection {
 	return &TicketsCollection{ticketsCollection}
 }
 
-func (c *TicketsCollection) GetTickets() []Ticket {
+func (c *TicketsCollection) getTickets() []Ticket {
 	tickets := []Ticket{}
 	cursor, err := c.Find(context.TODO(), bson.M{})
 	if err == nil {
@@ -53,4 +53,14 @@ func (c *TicketsCollection) HandleEvent(event cqrs.Event) error {
 	default:
 		return errors.Errorf("%T does not recognize event: %#v", c, e)
 	}
+}
+
+func (c *TicketsCollection) HandleQuery(query interface{}) (tickets []Ticket) {
+	switch query.(type) {
+	case ActiveTicketsQuery:
+		tickets = c.getTickets()
+	default:
+		log.Printf("Query not recognized: %#v", c)
+	}
+	return
 }

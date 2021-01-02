@@ -15,7 +15,7 @@ import (
 type TicketsController struct {
 	ticketsTemplate   *template.Template
 	newTicketTemplate *template.Template
-	DAL               DataHandler
+	QueryHandler      TicketQueryHandler
 	CommandHandler    cqrs.CommandHandler
 }
 
@@ -69,7 +69,8 @@ func (t *TicketsController) newTicket(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *TicketsController) showTickets(w http.ResponseWriter, r *http.Request) {
-	tickets := t.DAL.GetTickets()
+	query := ActiveTicketsQuery{}
+	tickets := t.QueryHandler.HandleQuery(query)
 	w.Header().Set("Content-Type", "text/html")
 	t.ticketsTemplate.Execute(w, tickets)
 }

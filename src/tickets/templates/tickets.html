@@ -1,10 +1,10 @@
 {{define "content"}}
-    <p>All tickets</p>
-    <ul>
-        {{range .}}
-        <li>
-            {{.Summary}}
-        </li>
-        {{end}}
-    </ul>
+<a href="/tickets/new">New Ticket</a>
+<ul>
+    {{range .}}
+    <li>
+        {{.Summary}}
+    </li>
+    {{end}}
+</ul>
 {{end}}

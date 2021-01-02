@@ -25,6 +25,7 @@ func Startup() {
 	ticketsController.CommandHandler = &tickets.TicketCommandHandler{
 		Handlers: []cqrs.EventHandler{
 			ticketsCollection,
+			new(cqrs.EventLogger),
 		},
 	}
 }

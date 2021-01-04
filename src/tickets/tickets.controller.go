@@ -2,6 +2,7 @@ package tickets
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -22,7 +23,7 @@ type TicketsController struct {
 
 func (t *TicketsController) RegisterRoutes() {
 	http.HandleFunc("/tickets", t.showTickets)
-	http.HandleFunc("/tickets/modify/", t.modifyTicket)
+	http.HandleFunc("/tickets/status/", t.updateStatus)
 	http.HandleFunc("/tickets/new", t.newTicket)
 }
 
@@ -50,27 +51,29 @@ func (t *TicketsController) registerTemplate(layout *template.Template, fileName
 	return tmpl
 }
 
-func (t *TicketsController) modifyTicket(w http.ResponseWriter, r *http.Request) {
-	ticketPattern, _ := regexp.Compile(`/tickets/modify/(\w+)`)
+func (t *TicketsController) updateStatus(w http.ResponseWriter, r *http.Request) {
+	ticketPattern, _ := regexp.Compile(`/tickets/status/(\w+)`)
 	matches := ticketPattern.FindStringSubmatch(r.URL.Path)
 	if len(matches) > 0 {
-		t.handleModify(w, r, matches[1])
+		t.handleStatusUpdate(w, r, matches[1])
 	} else {
 		http.Redirect(w, r, "/tickets", http.StatusFound)
 	}
 }
 
-func (t *TicketsController) handleModify(w http.ResponseWriter, r *http.Request, ticketID string) {
+func (t *TicketsController) handleStatusUpdate(w http.ResponseWriter, r *http.Request, ticketID string) {
 	switch r.Method {
 	case http.MethodPost:
-		err := r.ParseForm()
-		if err != nil {
+		if err := r.ParseForm(); err != nil {
 			log.Printf("Cannot parse form: %v", err)
 			return
 		}
-		status := r.Form.Get("status")
-		log.Printf("handling modify: '%v'", status)
+		cmd := NewStatusChangeCmd(r.Form.Get("status"), ticketID)
+		cqrs.LogWithCorrelation(cmd, fmt.Sprintf("Status Change Command created: %#v", cmd))
+		t.CommandHandler.HandleCommand(cmd)
 		http.Redirect(w, r, "/tickets", http.StatusFound)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 

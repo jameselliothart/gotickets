@@ -37,24 +37,6 @@ type CreateTicketDto struct {
 	Summary string
 }
 
-type CreateTicketCmd struct {
-	corrID      uuid.UUID
-	TicketFields
-}
-
-func NewCreateTicketCmd(summary string) CreateTicketCmd {
-	return CreateTicketCmd{
-		corrID: uuid.New(),
-		TicketFields: TicketFields{
-			Summary: summary,
-		},
-	}
-}
-
-func (c CreateTicketCmd) CorrelationID() uuid.UUID {
-	return c.corrID
-}
-
 type TicketCreatedEvent struct {
 	corrID uuid.UUID
 	createdAt time.Time
@@ -84,7 +66,3 @@ type TicketQueryHandler interface {
 }
 
 type ActiveTicketsQuery struct {}
-
-type DataHandler interface {
-	GetTickets() []Ticket
-}

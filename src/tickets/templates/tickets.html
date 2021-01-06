@@ -10,21 +10,17 @@
                 </p>
             </div>
             <div class="card-body">
-                <!-- Button trigger modal -->
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmClose">
-                    Complete
-                </button>
+                <div class="accordion" id="cardActions-{{.ID}}">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="completeCard-{{.ID}}">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne-{{.ID}}" aria-expanded="false" aria-controls="collapseOne-{{.ID}}">
+                                Close
+                            </button>
+                        </h2>
+                        <div id="collapseOne-{{.ID}}" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#cardActions-{{.ID}}">
+                            <div class="accordion-body">
 
-                <!-- Modal -->
-                <div class="modal fade" id="confirmClose" tabindex="-1" aria-labelledby="confirmCloseLabel" aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="confirmCloseLabel">Close Ticket?</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-footer">
-                                <form class="row g-3" action="/tickets/status/{{.ID}}" method="POST">
+                                <form class="row g-2" action="/tickets/status/{{.ID}}" method="POST">
                                     <div class="row form-group">
                                         <label for="status" class="col-sm-3 col-form-label">Status:</label>
                                         <div class="col-sm-9">
@@ -33,10 +29,11 @@
                                             </select>
                                         </div>
                                     </div>
-
-                                    <button type="submit" class="btn btn-primary">Looks good!</button>
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Never mind</button>
+                                    <div class="col-sm-6">
+                                        <button type="submit" class="btn btn-primary">Looks good!</button>
+                                    </div>
                                 </form>
+
                             </div>
                         </div>
                     </div>

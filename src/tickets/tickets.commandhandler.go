@@ -8,31 +8,36 @@ import (
 )
 
 type TicketCommandHandler struct {
-	Handlers []cqrs.EventHandler
+	EventHandlers []cqrs.EventHandler
+	CommandHandler cqrs.CommandHandler
 }
 
-func (h *TicketCommandHandler) HandleCommand(cmd cqrs.Command) {
+func (h *TicketCommandHandler) Dispatch(cmd cqrs.Command) {
 	ch := make(chan error)
 	wgHandlers := &sync.WaitGroup{}
 	wg := &sync.WaitGroup{}
-	switch c := cmd.(type) {
-	case CreateTicketCmd:
-		ticketCreated := NewTicketCreatedEvent(c)
-		for _, handler := range h.Handlers {
+	events, err := h.CommandHandler.HandleCommand(cmd)
+	if err != nil {
+		cqrs.LogWithCorrelation(cmd, fmt.Sprintf("%T: %v", h, err))
+		return
+	}
+	for _, event := range events {
+		for _, handler := range h.EventHandlers {
 			wgHandlers.Add(1)
-			go handler.HandleEvent(ticketCreated, wgHandlers, ch)
+			go func(event cqrs.Event, handler cqrs.EventHandler, wg *sync.WaitGroup, ch chan<- error) {
+				ch <- handler.HandleEvent(event)
+				wg.Done()
+			}(event, handler, wgHandlers, ch)
 		}
 		wg.Add(1)
-		go func(wg *sync.WaitGroup, ch <-chan error) {
+		go func(event cqrs.Event, wg *sync.WaitGroup, ch <-chan error) {
 			for err := range ch {
 				if err != nil {
-					cqrs.LogWithCorrelation(ticketCreated, fmt.Sprintf("Error handling event %#v: %v", ticketCreated, err))
+					cqrs.LogWithCorrelation(event, fmt.Sprintf("Error handling event %#v: %v", event, err))
 				}
 			}
 			wg.Done()
-		}(wg, ch)
-	default:
-		cqrs.LogWithCorrelation(cmd, fmt.Sprintf("Command not recognized: %#v", c))
+		}(event, wg, ch)
 	}
 	wgHandlers.Wait()
 	close(ch)

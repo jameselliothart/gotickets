@@ -18,7 +18,7 @@ type TicketsController struct {
 	ticketsTemplate   *template.Template
 	newTicketTemplate *template.Template
 	QueryHandler      TicketQueryHandler
-	CommandHandler    cqrs.CommandHandler
+	CommandDispatcher cqrs.CommandDispatcher
 }
 
 func (t *TicketsController) RegisterRoutes() {
@@ -70,7 +70,7 @@ func (t *TicketsController) handleStatusUpdate(w http.ResponseWriter, r *http.Re
 		}
 		cmd := NewStatusChangeCmd(r.Form.Get("status"), ticketID)
 		cqrs.LogWithCorrelation(cmd, fmt.Sprintf("Status Change Command created: %#v", cmd))
-		t.CommandHandler.HandleCommand(cmd)
+		t.CommandDispatcher.Dispatch(cmd)
 		http.Redirect(w, r, "/tickets", http.StatusFound)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -90,7 +90,7 @@ func (t *TicketsController) newTicket(w http.ResponseWriter, r *http.Request) {
 		}
 		ticketToCreate := NewCreateTicketCmd(r.Form.Get("summary"))
 		cqrs.LogWithCorrelation(ticketToCreate, "Create Ticket Command created:", ticketToCreate)
-		t.CommandHandler.HandleCommand(ticketToCreate)
+		t.CommandDispatcher.Dispatch(ticketToCreate)
 		http.Redirect(w, r, "/tickets", http.StatusFound)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -98,7 +98,7 @@ func (t *TicketsController) newTicket(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *TicketsController) showTickets(w http.ResponseWriter, r *http.Request) {
-	query := ActiveTicketsQuery{}
+	query := OpenTicketsQuery{}
 	tickets := t.QueryHandler.HandleQuery(query)
 	w.Header().Set("Content-Type", "text/html")
 	t.ticketsTemplate.Execute(w, tickets)

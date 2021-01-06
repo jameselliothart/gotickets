@@ -2,7 +2,6 @@ package cqrs
 
 import (
 	"log"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,8 +15,12 @@ type Command interface {
 	Correlatable
 }
 
+type CommandDispatcher interface {
+	Dispatch(Command)
+}
+
 type CommandHandler interface {
-	HandleCommand(Command)
+	HandleCommand(Command) ([]Event, error)
 }
 
 type Event interface {
@@ -26,17 +29,16 @@ type Event interface {
 }
 
 type EventHandler interface {
-	HandleEvent(Event, *sync.WaitGroup, chan<- error)
+	HandleEvent(Event) error
 }
 
 func LogWithCorrelation(c Correlatable, v ...interface{}) {
 	log.Println(c.CorrelationID(), v)
 }
 
-type EventLogger struct {}
+type EventLogger struct{}
 
-func (l EventLogger) HandleEvent(event Event, wg *sync.WaitGroup, ch chan<- error) {
+func (l EventLogger) HandleEvent(event Event) error {
 	LogWithCorrelation(event, "Event created:", event)
-	ch <- nil
-	wg.Done()
+	return nil
 }

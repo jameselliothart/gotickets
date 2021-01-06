@@ -22,8 +22,9 @@ func Startup() {
 
 	ticketsCollection := tickets.NewTicketsCollection(connectToMongo("mongodb://localhost:27017"))
 	ticketsController.QueryHandler = ticketsCollection
-	ticketsController.CommandHandler = &tickets.TicketCommandHandler{
-		Handlers: []cqrs.EventHandler{
+	ticketsController.CommandDispatcher = &tickets.TicketCommandHandler{
+		CommandHandler: ticketsCollection,
+		EventHandlers: []cqrs.EventHandler{
 			ticketsCollection,
 			new(cqrs.EventLogger),
 		},

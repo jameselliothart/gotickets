@@ -31,7 +31,7 @@ type CompleteTicketCmd struct {
 
 func NewCompleteTicketCmd(ticketID string) CompleteTicketCmd {
 	return CompleteTicketCmd{
-		corrID: uuid.New(),
+		corrID:   uuid.New(),
 		TicketID: TicketID{ID: ticketID},
 	}
 }
